@@ -292,12 +292,18 @@
         let velY = 0;
         let mouseX = -1000;
         let mouseY = -1000;
+        let mouseXPrev = -1000;
+        let mouseYPrev = -1000;
         let lastTime = 0;
         let isCaught = false;
         let isInvulnerable = false;
         let isMobile = window.innerWidth < 768;
         let isResetting = false;
-        let reservedBottom = 160; // Initial fallback
+        let reservedBottom = 160; 
+
+        // Anti-corner / Panic mechanics
+        let lastBurstTime = 0;
+        let distPrev = 0;
 
         // Stuck detection state
         let prevPosX = 0;
@@ -314,10 +320,9 @@
         function updateReservedBottom() {
             if (statsPanel) {
                 const statsHeight = statsPanel.getBoundingClientRect().height;
-                // Get the computed style to find the distance from bottom (1rem usually)
                 const style = window.getComputedStyle(statsPanel);
                 const bottomValue = parseFloat(style.bottom) || 16;
-                reservedBottom = statsHeight + bottomValue + 20; // 20px extra safety margin
+                reservedBottom = statsHeight + bottomValue + 20; 
             }
         }
 
@@ -364,6 +369,7 @@
             isCaught = false;
             isInvulnerable = false;
             stuckFrames = 0;
+            lastBurstTime = 0;
             duckEl.classList.remove('caught-anim');
             duckEl.style.opacity = '1';
         }
@@ -416,44 +422,88 @@
 
             if (!isCaught) {
                 const size = isMobile ? DUCK_SIZE.mobile : DUCK_SIZE.desktop;
-                const edgeMargin = isMobile ? 22 : 28;
+                const edgeMarginStandard = isMobile ? 22 : 28;
+                const panicEdgeMargin = isMobile ? 30 : 40;
                 const minSpeed = isMobile ? 2.0 : 2.5;
                 
                 const basePanic = isMobile ? PANIC_ZONE.mobile : PANIC_ZONE.desktop;
                 const panicRadius = Math.min(550, basePanic + (stats.attempts * 1.8));
                 const speedScale = Math.min(2.8, 1 + (stats.attempts * 0.008));
                 
-                const dx = posX + size / 2 - mouseX;
-                const dy = posY + size / 2 - mouseY;
-                const distance = Math.sqrt(dx * dx + dy * dy);
+                const dx = (posX + size / 2) - mouseX;
+                const dy = (posY + size / 2) - mouseY;
+                const distNow = Math.sqrt(dx * dx + dy * dy) || 1;
 
-                // 1. Core Panic Repulsion Logic
-                if (distance < panicRadius) {
-                    const force = (1 - distance / panicRadius) * (3.0 * speedScale);
-                    velX += (dx / distance) * force;
-                    velY += (dy / distance) * force;
+                // Approach speed calculation
+                const mouseMovedDist = Math.sqrt((mouseX - mouseXPrev)**2 + (mouseY - mouseYPrev)**2);
+                const approachSpeed = deltaTime > 0 ? mouseMovedDist / deltaTime : 0;
+                const approachDelta = distPrev - distNow;
+
+                // --- 1. Core Repulsion Logic ---
+                if (distNow < panicRadius) {
+                    const force = (1 - distNow / panicRadius) * (3.0 * speedScale);
+                    velX += (dx / distNow) * force;
+                    velY += (dy / distNow) * force;
                 } else {
                     velX += (Math.random() - 0.5) * 0.3;
                     velY += (Math.random() - 0.5) * 0.3;
                 }
 
-                // 2. Anti-Corner Nudge
-                const pushStrength = Math.min(0.4, 0.15 + (stats.attempts * 0.001));
-                if (posX < edgeMargin) velX += pushStrength;
-                if (posX > window.innerWidth - size - edgeMargin) velX -= pushStrength;
-                if (posY < edgeMargin) velY += pushStrength;
-                if (posY > window.innerHeight - size - reservedBottom - edgeMargin) velY -= pushStrength;
+                // --- 2. ANTI-CORNER / PANIC BURST ---
+                const isNearEdge = (posX < panicEdgeMargin) || 
+                                   (posX > window.innerWidth - size - panicEdgeMargin) || 
+                                   (posY < panicEdgeMargin) || 
+                                   (posY > window.innerHeight - size - reservedBottom - panicEdgeMargin);
 
-                // 3. Application of Velocity & Friction
-                velX *= 0.95;
-                velY *= 0.95;
+                const now = performance.now();
+                if (isNearEdge && (now - lastBurstTime > 700)) {
+                    // Trigger if rapid approach detected within a sub-radius
+                    if (distNow < panicRadius * 0.55 && (approachDelta > 35 || approachSpeed > 1.0)) {
+                        const difficultyScale = Math.min(1.6, 1 + (stats.attempts * 0.005));
+                        const baseBurst = isMobile ? 28 : 35;
+                        const burst = baseBurst * difficultyScale;
+
+                        // Direction away from mouse + center bias
+                        const centerX = window.innerWidth / 2;
+                        const centerY = (window.innerHeight - reservedBottom) / 2;
+                        const toCenterX = centerX - (posX + size / 2);
+                        const toCenterY = centerY - (posY + size / 2);
+                        const toCenterMag = Math.sqrt(toCenterX**2 + toCenterY**2) || 1;
+
+                        const dirX = (dx / distNow) * 0.7 + (toCenterX / toCenterMag) * 0.3;
+                        const dirY = (dy / distNow) * 0.7 + (toCenterY / toCenterMag) * 0.3;
+                        const dirMag = Math.sqrt(dirX**2 + dirY**2) || 1;
+
+                        velX = (dirX / dirMag) * burst + (Math.random() - 0.5) * 5;
+                        velY = (dirY / dirMag) * burst + (Math.random() - 0.5) * 5;
+
+                        lastBurstTime = now;
+                    }
+                }
+
+                // Update state for next frame
+                distPrev = distNow;
+                mouseXPrev = mouseX;
+                mouseYPrev = mouseY;
+
+                // --- 3. Damping & Nudges ---
+                const pushStrength = Math.min(0.4, 0.15 + (stats.attempts * 0.001));
+                if (posX < edgeMarginStandard) velX += pushStrength;
+                if (posX > window.innerWidth - size - edgeMarginStandard) velX -= pushStrength;
+                if (posY < edgeMarginStandard) velY += pushStrength;
+                if (posY > window.innerHeight - size - reservedBottom - edgeMarginStandard) velY -= pushStrength;
+
+                // Less damping if recently bursted to keep speed
+                const friction = (now - lastBurstTime < 250) ? 0.98 : 0.95;
+                velX *= friction;
+                velY *= friction;
 
                 posX += velX * (deltaTime / 16);
                 posY += velY * (deltaTime / 16);
 
-                // 4. Stuck Detector
+                // --- 4. Stuck Detector ---
                 const distMoved = Math.sqrt((posX - prevPosX) ** 2 + (posY - prevPosY) ** 2);
-                if (distMoved < 0.5 && (posX < edgeMargin * 2 || posX > window.innerWidth - size - edgeMargin * 2 || posY < edgeMargin * 2 || posY > window.innerHeight - size - reservedBottom - edgeMargin * 2)) {
+                if (distMoved < 0.5 && (posX < edgeMarginStandard * 2 || posX > window.innerWidth - size - edgeMarginStandard * 2 || posY < edgeMarginStandard * 2 || posY > window.innerHeight - size - reservedBottom - edgeMarginStandard * 2)) {
                     stuckFrames++;
                 } else {
                     stuckFrames = 0;
@@ -464,7 +514,7 @@
                     const centerY = (window.innerHeight - reservedBottom) / 2;
                     const toCenterX = centerX - (posX + size / 2);
                     const toCenterY = centerY - (posY + size / 2);
-                    const mag = Math.sqrt(toCenterX**2 + toCenterY**2);
+                    const mag = Math.sqrt(toCenterX**2 + toCenterY**2) || 1;
                     velX += (toCenterX / mag) * 4;
                     velY += (toCenterY / mag) * 4;
                     stuckFrames = 0;
@@ -472,7 +522,7 @@
                 prevPosX = posX;
                 prevPosY = posY;
 
-                // 5. Intelligent Bounce & Clamp Logic
+                // --- 5. Collision & Clamping ---
                 if (posX < 0) { 
                     posX = 0; 
                     velX = Math.abs(velX) * 0.8 + 1.5; 
@@ -501,7 +551,7 @@
                     velY += Math.sin(angle) * 1.5;
                 }
 
-                // 6. Visual Transforms
+                // --- 6. Visual Transforms ---
                 const rotation = velX * 3.5;
                 const baseScale = isInvulnerable ? 0.85 : 1;
                 const breatheScale = Math.sin(time / 200) * 0.05;
@@ -533,7 +583,7 @@
             const size = isMobile ? DUCK_SIZE.mobile : DUCK_SIZE.desktop;
             const dx = (posX + size / 2) - mouseX;
             const dy = (posY + size / 2) - mouseY;
-            const dist = Math.sqrt(dx * dx + dy * dy);
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
             const boost = 28 + (stats.attempts * 0.15);
             velX += (dx / dist) * boost;
             velY += (dy / dist) * boost;
