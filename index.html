@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duck Panic — Attrape le canard (jeu inutile)</title>
+    <meta name="description" content="Duck Panic : Un mini-jeu addictif et drôle où vous devez attraper un canard farceur. S'échappe plus vite que son ombre !">
+    <meta property="og:title" content="Duck Panic — Catch the Duck!">
+    <meta property="og:description" content="Try to catch the panicking duck in this addictive and funny mini-game.">
+    <meta property="og:type" content="website">
+    <style>
+        :root {
+            --blue-600: #2563eb;
+            --blue-400: #60a5fa;
+            --blue-100: #dbeafe;
+            --orange-500: #f97316;
+            --green-500: #22c55e;
+            --red-50: #fef2f2;
+            --red-100: #fee2e2;
+            --red-500: #ef4444;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-800: #1f2937;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f9ff;
+            color: var(--gray-800);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            touch-action: none;
+        }
+
+        /* --- Header --- */
+        header {
+            z-index: 20;
+            text-align: center;
+            padding: 1rem;
+            pointer-events: none;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--blue-600);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--blue-400);
+            font-weight: 600;
+        }
+
+        /* --- Game Area --- */
+        #game-area {
+            position: absolute;
+            inset: 0;
+            z-index: 5;
+            cursor: crosshair;
+        }
+
+        #duck {
+            position: absolute;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            will-change: transform;
+            transition: opacity 0.2s;
+        }
+
+        .duck-emoji {
+            font-size: 4.5rem;
+            transition: transform 0.2s;
+        }
+
+        @media (max-width: 768px) {
+            .duck-emoji { font-size: 3.5rem; }
+            h1 { font-size: 2rem; }
+        }
+
+        /* --- UI Layers --- */
+        .message-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 30;
+        }
+
+        .popup {
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+            color: white;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 1.25rem;
+            transform: scale(1.1);
+            animation: bounce 0.5s infinite alternate;
+            display: none;
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0) scale(1.1); }
+            to { transform: translateY(-10px) scale(1.1); }
+        }
+
+        /* --- Stats Panel --- */
+        .stats-panel {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            min-width: 280px;
+            max-width: 900px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 1.25rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            padding: 1rem 2rem;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            z-index: 40;
+            gap: 1rem;
+        }
+
+        @media (max-width: 640px) {
+            .stats-panel {
+                padding: 0.75rem 1.5rem;
+                bottom: 1.5rem;
+            }
+        }
+
+        .stats-group {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        @media (max-width: 400px) {
+            .stats-group { gap: 1rem; }
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: var(--gray-500);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        footer {
+            position: fixed;
+            bottom: 0.25rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.5rem;
+            color: var(--gray-400);
+            font-weight: 500;
+            z-index: 35;
+        }
+
+        /* --- Animations --- */
+        .caught-anim {
+            animation: caught 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes caught {
+            0% { transform: scale(1) rotate(0); }
+            50% { transform: scale(1.6) rotate(20deg); }
+            100% { transform: scale(0) rotate(0); }
+        }
+
+        .confetti {
+            position: absolute;
+            pointer-events: none;
+            z-index: 50;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 id="ui-title">Duck Panic 🦆</h1>
+        <p id="ui-subtitle" class="subtitle">Essaie d’attraper le canard. (Bonne chance.)</p>
+    </header>
+
+    <div id="game-area">
+        <div id="duck" aria-label="Duck">
+            <div class="duck-emoji">🦆</div>
+        </div>
+    </div>
+
+    <div class="message-overlay">
+        <div id="popup" class="popup">Gagné !</div>
+    </div>
+
+    <div class="stats-panel">
+        <div class="stats-group">
+            <div class="stat-item">
+                <span id="ui-captures-label" class="stat-label">Captures</span>
+                <span class="stat-value" style="color: var(--blue-600)">🏆 <span id="stat-captures">0</span></span>
+            </div>
+            <div class="stat-item">
+                <span id="ui-attempts-label" class="stat-label">Tentatives</span>
+                <span class="stat-value" style="color: var(--orange-500)">🎯 <span id="stat-attempts">0</span></span>
+            </div>
+            <div class="stat-item">
+                <span id="ui-accuracy-label" class="stat-label">Précision</span>
+                <span class="stat-value" style="color: var(--green-500)">📈 <span id="stat-accuracy">0</span>%</span>
+            </div>
+        </div>
+    </div>
+
+    <footer id="ui-footer">Made for fun — no cookies.</footer>
+
+    <script>
+        // --- Constants & Configuration ---
+        const I18N = {
+            fr: {
+                title: "Duck Panic",
+                subtitle: "Essaie d’attraper le canard. (Bonne chance.)",
+                captures: "Captures",
+                attempts: "Tentatives",
+                accuracy: "Précision",
+                footer: "Fait pour s'amuser — aucun cookie.",
+                taunts: ["Trop lent !", "Même pas mal !", "Oups, raté !", "Ahah, dans tes rêves !", "Vise mieux !", "Vraiment ?", "Mes plumes te saluent !"],
+                victories: ["BIEN JOUÉ !", "Incroyable !", "Tu l'as eu !", "Maître des canards !", "Champion !"]
+            },
+            en: {
+                title: "Duck Panic",
+                subtitle: "Try to catch the duck. (Good luck.)",
+                captures: "Captures",
+                attempts: "Attempts",
+                accuracy: "Accuracy",
+                footer: "Made for fun — no cookies.",
+                taunts: ["Too slow!", "Not even close!", "Oops, missed!", "Haha, in your dreams!", "Better luck next time!", "Seriously?", "My feathers salute you!"],
+                victories: ["WELL DONE!", "Incredible reflexes!", "You got it!", "Duck Master!", "World Champion!"]
+            }
+        };
+
+        const PANIC_ZONE = { desktop: 250, mobile: 180 };
+        const DUCK_SIZE = { desktop: 80, mobile: 70 };
+
+        // --- State ---
+        let lang = localStorage.getItem('duck-panic-lang') || (navigator.language.startsWith('fr') ? 'fr' : 'en');
+        let stats = JSON.parse(localStorage.getItem('duck-panic-stats')) || { captures: 0, attempts: 0 };
+        
+        let posX = window.innerWidth / 2;
+        let posY = window.innerHeight / 2;
+        let velX = 0;
+        let velY = 0;
+        let mouseX = -1000;
+        let mouseY = -1000;
+        let lastTime = 0;
+        let isCaught = false;
+        let isInvulnerable = false;
+        let isMobile = window.innerWidth < 768;
+        let isResetting = false;
+
+        const duckEl = document.getElementById('duck');
+        const duckEmoji = duckEl.querySelector('.duck-emoji');
+        const gameArea = document.getElementById('game-area');
+        const popup = document.getElementById('popup');
+
+        // --- Functions ---
+        function updateI18n() {
+            const t = I18N[lang];
+            document.getElementById('ui-title').innerText = t.title + " 🦆";
+            document.getElementById('ui-subtitle').innerText = t.subtitle;
+            document.getElementById('ui-captures-label').innerText = t.captures;
+            document.getElementById('ui-attempts-label').innerText = t.attempts;
+            document.getElementById('ui-accuracy-label').innerText = t.accuracy;
+            document.getElementById('ui-footer').innerText = t.footer;
+            localStorage.setItem('duck-panic-lang', lang);
+        }
+
+        function updateStatsUI() {
+            document.getElementById('stat-captures').innerText = stats.captures;
+            document.getElementById('stat-attempts').innerText = stats.attempts;
+            const accuracy = stats.attempts > 0 ? Math.round((stats.captures / stats.attempts) * 100) : 0;
+            document.getElementById('stat-accuracy').innerText = accuracy;
+            try {
+                localStorage.setItem('duck-panic-stats', JSON.stringify(stats));
+            } catch (e) {
+                console.warn('Storage failed', e);
+            }
+        }
+
+        function spawnDuck() {
+            const size = isMobile ? DUCK_SIZE.mobile : DUCK_SIZE.desktop;
+            const margin = 100;
+            const reservedBottom = isMobile ? 220 : 160;
+
+            let newX, newY, dist;
+            let attempts = 0;
+            do {
+                newX = margin + Math.random() * (window.innerWidth - size - margin * 2);
+                newY = margin + Math.random() * (window.innerHeight - size - margin * 2 - reservedBottom);
+                dist = Math.sqrt((newX - mouseX) ** 2 + (newY - mouseY) ** 2);
+                attempts++;
+            } while (dist < 300 && attempts < 15);
+
+            posX = newX;
+            posY = newY;
+            velX = (Math.random() - 0.5) * 5;
+            velY = (Math.random() - 0.5) * 5;
+            isCaught = false;
+            isInvulnerable = false;
+            duckEl.classList.remove('caught-anim');
+            duckEl.style.opacity = '1';
+        }
+
+        function showPopup(text, type) {
+            popup.innerText = text;
+            popup.style.display = 'block';
+            popup.style.backgroundColor = type === 'victory' ? 'var(--green-500)' : 
+                                         (type === 'taunt' ? 'var(--orange-500)' : 'var(--blue-600)');
+            
+            setTimeout(() => {
+                popup.style.display = 'none';
+            }, 2000);
+        }
+
+        function triggerConfetti() {
+            const colors = ['#FFD700', '#FF6B6B', '#4D96FF', '#6BCB77'];
+            for (let i = 0; i < 40; i++) {
+                const c = document.createElement('div');
+                c.className = 'confetti';
+                c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                const size = Math.random() * 10 + 5;
+                c.style.width = size + 'px';
+                c.style.height = size + 'px';
+                
+                const startX = posX + (isMobile ? DUCK_SIZE.mobile : DUCK_SIZE.desktop) / 2;
+                const startY = posY + (isMobile ? DUCK_SIZE.mobile : DUCK_SIZE.desktop) / 2;
+                c.style.left = startX + 'px';
+                c.style.top = startY + 'px';
+                
+                gameArea.appendChild(c);
+
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 50 + Math.random() * 200;
+                const tx = Math.cos(angle) * dist;
+                const ty = Math.sin(angle) * dist;
+
+                const anim = c.animate([
+                    { transform: 'translate(0,0) scale(1)', opacity: 1 },
+                    { transform: `translate(${tx}px, ${ty}px) scale(0)`, opacity: 0 }
+                ], { duration: 1500, easing: 'cubic-bezier(0, .9, .57, 1)' });
+
+                anim.onfinish = () => c.remove();
+            }
+        }
+
+        function loop(time) {
+            const deltaTime = time - (lastTime || time);
+            lastTime = time;
+
+            if (!isCaught) {
+                const size = isMobile ? DUCK_SIZE.mobile : DUCK_SIZE.desktop;
+                const reservedBottom = isMobile ? 220 : 160;
+                
+                const basePanic = isMobile ? PANIC_ZONE.mobile : PANIC_ZONE.desktop;
+                const panicRadius = Math.min(550, basePanic + (stats.attempts * 1.8));
+                const speedScale = Math.min(2.8, 1 + (stats.attempts * 0.008));
+                
+                const dx = posX + size / 2 - mouseX;
+                const dy = posY + size / 2 - mouseY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < panicRadius) {
+                    const force = (1 - distance / panicRadius) * (3.0 * speedScale);
+                    velX += (dx / distance) * force;
+                    velY += (dy / distance) * force;
+                } else {
+                    velX += (Math.random() - 0.5) * 0.3;
+                    velY += (Math.random() - 0.5) * 0.3;
+                }
+
+                velX *= 0.95;
+                velY *= 0.95;
+
+                posX += velX * (deltaTime / 16);
+                posY += velY * (deltaTime / 16);
+
+                if (posX < 0) { posX = 0; velX = Math.abs(velX) * 0.7; }
+                if (posX > window.innerWidth - size) { posX = window.innerWidth - size; velX = -Math.abs(velX) * 0.7; }
+                if (posY < 0) { posY = 0; velY = Math.abs(velY) * 0.7; }
+                if (posY > window.innerHeight - size - reservedBottom) {
+                    posY = window.innerHeight - size - reservedBottom;
+                    velY = -Math.abs(velY) * 0.7;
+                }
+
+                const rotation = velX * 3.5;
+                const baseScale = isInvulnerable ? 0.85 : 1;
+                const breatheScale = Math.sin(time / 200) * 0.05;
+                
+                duckEl.style.transform = `translate(${posX}px, ${posY}px) rotate(${rotation}deg) scale(${baseScale + breatheScale})`;
+                duckEl.style.opacity = isInvulnerable ? '0.6' : '1';
+                duckEmoji.style.transform = velX < 0 ? 'scaleX(-1)' : 'scaleX(1)';
+            }
+
+            requestAnimationFrame(loop);
+        }
+
+        // --- Handlers ---
+        function handleInput(e) {
+            const targetX = e.clientX || (e.touches ? e.touches[0].clientX : mouseX);
+            const targetY = e.clientY || (e.touches ? e.touches[0].clientY : mouseY);
+            mouseX = targetX;
+            mouseY = targetY;
+        }
+
+        function handleMiss(e) {
+            if (isResetting || e.target.closest('button') || e.target.closest('.stats-panel') || isCaught) return;
+            
+            stats.attempts++;
+            updateStatsUI();
+            const taunts = I18N[lang].taunts;
+            showPopup(taunts[Math.floor(Math.random() * taunts.length)], 'taunt');
+            
+            const size = isMobile ? DUCK_SIZE.mobile : DUCK_SIZE.desktop;
+            const dx = (posX + size / 2) - mouseX;
+            const dy = (posY + size / 2) - mouseY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const boost = 28 + (stats.attempts * 0.15);
+            velX += (dx / dist) * boost;
+            velY += (dy / dist) * boost;
+
+            isInvulnerable = true;
+            setTimeout(() => isInvulnerable = false, 250);
+        }
+
+        function handleCatch(e) {
+            if (isResetting) return;
+            e.preventDefault();
+            e.stopPropagation();
+            if (isCaught || isInvulnerable) return;
+
+            isCaught = true;
+            stats.captures++;
+            stats.attempts++;
+            updateStatsUI();
+            
+            const victories = I18N[lang].victories;
+            showPopup(victories[Math.floor(Math.random() * victories.length)], 'victory');
+            triggerConfetti();
+            
+            duckEl.classList.add('caught-anim');
+            setTimeout(spawnDuck, 600);
+        }
+
+        // --- Initialization ---
+        window.onload = () => {
+            updateI18n();
+            updateStatsUI();
+            spawnDuck();
+            requestAnimationFrame(loop);
+
+            window.addEventListener('mousemove', handleInput);
+            window.addEventListener('touchmove', handleInput, { passive: false });
+            window.addEventListener('mousedown', handleMiss);
+            duckEl.addEventListener('mousedown', handleCatch);
+            duckEl.addEventListener('touchstart', handleCatch, { passive: false });
+
+            window.addEventListener('resize', () => {
+                isMobile = window.innerWidth < 768;
+                spawnDuck();
+            });
+        };
+    </script>
+</body>
+</html>

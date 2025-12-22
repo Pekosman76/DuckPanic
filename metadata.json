@@ -1,0 +1,5 @@
+{
+  "name": "Duck Panic",
+  "description": "An addictive and funny mini-game where you try to catch a panicking duck. Features physics-based movement, multi-language support (FR/EN), and taunting messages.",
+  "requestFramePermissions": []
+}
