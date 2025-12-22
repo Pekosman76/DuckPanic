@@ -47,28 +47,26 @@
             touch-action: none;
         }
 
-        /* --- Header --- */
         header {
             z-index: 20;
             text-align: center;
             padding: 1rem;
             pointer-events: none;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
         }
 
         h1 {
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             color: var(--blue-600);
             text-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
         .subtitle {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: var(--blue-400);
             font-weight: 600;
         }
 
-        /* --- Game Area --- */
         #game-area {
             position: absolute;
             inset: 0;
@@ -94,10 +92,9 @@
 
         @media (max-width: 768px) {
             .duck-emoji { font-size: 3.5rem; }
-            h1 { font-size: 2rem; }
+            h1 { font-size: 1.8rem; }
         }
 
-        /* --- UI Layers --- */
         .message-overlay {
             position: absolute;
             inset: 0;
@@ -117,96 +114,166 @@
             text-transform: uppercase;
             font-size: 1.25rem;
             transform: scale(1.1);
-            animation: bounce 0.5s infinite alternate;
+            animation: popupBounce 0.5s infinite alternate;
             display: none;
         }
 
-        @keyframes bounce {
+        @keyframes popupBounce {
             from { transform: translateY(0) scale(1.1); }
             to { transform: translateY(-10px) scale(1.1); }
         }
 
-        /* --- Stats Panel --- */
         .stats-panel {
             position: fixed;
             bottom: 1rem;
             left: 50%;
             transform: translateX(-50%);
-            width: auto;
-            min-width: 280px;
+            width: 95vw;
             max-width: 900px;
-            background: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border-radius: 1.25rem;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-            padding: 1rem 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15);
+            padding: 0.75rem 1.25rem;
             display: flex;
             flex-direction: row;
+            flex-wrap: wrap;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             z-index: 40;
             gap: 1rem;
         }
 
-        @media (max-width: 640px) {
-            .stats-panel {
-                padding: 0.75rem 1.5rem;
-                bottom: 1.5rem;
-            }
-        }
-
         .stats-group {
             display: flex;
-            gap: 1.5rem;
+            gap: 1rem;
             align-items: center;
+            flex-grow: 1;
+            justify-content: center;
+            flex-wrap: wrap;
         }
 
-        @media (max-width: 400px) {
-            .stats-group { gap: 1rem; }
+        @media (max-width: 640px) {
+            .stats-panel { padding: 0.5rem 0.75rem; gap: 0.5rem; border-radius: 1rem; }
+            .stats-group { gap: 0.5rem; }
         }
 
         .stat-item {
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-width: 65px;
         }
 
         .stat-label {
-            font-size: 0.6rem;
+            font-size: 0.55rem;
             text-transform: uppercase;
             color: var(--gray-500);
             font-weight: 800;
-            letter-spacing: -0.02em;
+            letter-spacing: 0.02em;
         }
 
         .stat-value {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 0.25rem;
+            gap: 0.15rem;
         }
+
+        .btn {
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.6rem 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+        }
+
+        .btn-challenge {
+            background-color: var(--orange-500);
+            color: white;
+            box-shadow: 0 4px 0 #c2410c;
+            min-width: 130px;
+        }
+        .btn-challenge:hover { background-color: #fb923c; }
+        .btn-challenge:active { transform: translateY(3px); box-shadow: 0 1px 0 #c2410c; }
+        .btn-challenge.active {
+            background-color: var(--red-500);
+            box-shadow: 0 4px 0 #b91c1c;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse { 50% { opacity: 0.8; } }
+
+        .btn-info {
+            background: var(--gray-100);
+            color: var(--gray-600);
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            padding: 0;
+            font-family: "Georgia", serif;
+            font-style: italic;
+            font-size: 1.4rem;
+            border: 2px solid var(--gray-200);
+        }
+        .btn-info:hover { background: var(--gray-200); transform: scale(1.05); }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.65);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            backdrop-filter: blur(6px);
+            padding: 1rem;
+        }
+        .modal {
+            background: white;
+            width: 100%;
+            max-width: 550px;
+            max-height: 85vh;
+            border-radius: 2rem;
+            padding: 2.5rem 2rem;
+            position: relative;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            border: 4px solid var(--blue-100);
+        }
+        .modal h2 { color: var(--blue-600); margin-bottom: 1.25rem; font-size: 1.8rem; line-height: 1.2; }
+        .modal h3 { color: var(--orange-500); margin: 1.75rem 0 0.75rem 0; font-size: 1.2rem; font-weight: 800; border-bottom: 2px solid var(--gray-100); padding-bottom: 0.25rem; }
+        .modal p { color: var(--gray-600); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1rem; }
+        .modal ul { margin-left: 1.5rem; margin-bottom: 1.5rem; }
+        .modal li { color: var(--gray-700); font-size: 0.9rem; margin-bottom: 0.6rem; list-style-type: "🦆 "; padding-left: 0.5rem; }
 
         footer {
             position: fixed;
             bottom: 0.25rem;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 0.5rem;
+            font-size: 0.55rem;
             color: var(--gray-400);
-            font-weight: 500;
+            font-weight: 600;
             z-index: 35;
+            letter-spacing: 0.05em;
         }
 
-        /* --- Animations --- */
         .caught-anim {
             animation: caught 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         @keyframes caught {
             0% { transform: scale(1) rotate(0); }
-            50% { transform: scale(1.6) rotate(20deg); }
+            50% { transform: scale(1.6) rotate(25deg); }
             100% { transform: scale(0) rotate(0); }
         }
 
@@ -236,6 +303,10 @@
     </div>
 
     <div class="stats-panel">
+        <button id="btn-challenge" class="btn btn-challenge">
+            <span id="ui-btn-challenge">Défi 1:00</span>
+        </button>
+
         <div class="stats-group">
             <div class="stat-item">
                 <span id="ui-captures-label" class="stat-label">Captures</span>
@@ -249,13 +320,50 @@
                 <span id="ui-accuracy-label" class="stat-label">Précision</span>
                 <span class="stat-value" style="color: var(--green-500)">📈 <span id="stat-accuracy">0</span>%</span>
             </div>
+            <div class="stat-item">
+                <span id="ui-best-label" class="stat-label">Record</span>
+                <span class="stat-value" style="color: var(--blue-400)">⭐ <span id="stat-best">0</span></span>
+            </div>
+        </div>
+
+        <button id="btn-info" class="btn btn-info" aria-label="Information">i</button>
+    </div>
+
+    <div id="modal-info" class="modal-overlay">
+        <div class="modal">
+            <h2 id="modal-title">Duck Panic : Le Guide Ultime</h2>
+            
+            <section>
+                <h3 id="modal-h1">La Mythologie du Canard</h3>
+                <p id="modal-p1">Bienvenue dans Duck Panic. Le canard que vous tentez d'attraper est un spécimen rare entraîné par les algorithmes les plus capricieux.</p>
+            </section>
+
+            <section>
+                <h3 id="modal-h2">Règles du Défi</h3>
+                <p id="modal-p2">60 secondes pour prouver votre valeur. Battez votre record et entrez dans la légende des plumes.</p>
+            </section>
+
+            <section>
+                <h3 id="modal-h3">Conseils</h3>
+                <ul>
+                    <li id="modal-li1">Fixez le canard, ne clignez pas.</li>
+                    <li id="modal-li2">Prévoyez une souris de secours.</li>
+                    <li id="modal-li3">Le canard sent la peur.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h3 id="modal-h5">Canard & Jeux Drôles</h3>
+                <p id="modal-p5">Vous cherchez un <strong>jeu inutile</strong> ou un <strong>jeu absurde</strong> pour briller en société ? Duck Panic est le <strong>mini-jeu drôle</strong> ultime pour navigateur. Ici, attraper un <strong>canard paniqué</strong> est un sport de haut niveau, gratuit et sans inscription. Que ce soit pour un <strong>défi 1 minute</strong> ou pour exploser votre record de <strong>score</strong>, vous êtes au bon endroit pour perdre votre temps intelligemment. Un canard averti en vaut deux, mais un canard paniqué vaut tout l'or du monde. Coin.</p>
+            </section>
+
+            <button id="modal-close-btn" class="btn btn-challenge" style="width:100%; justify-content:center; margin-top:1rem;">Fermer</button>
         </div>
     </div>
 
-    <footer id="ui-footer">Made for fun — no cookies.</footer>
+    <footer id="ui-footer">Made with panic — catch them all.</footer>
 
     <script>
-        // --- Constants & Configuration ---
         const I18N = {
             fr: {
                 title: "Duck Panic",
@@ -263,9 +371,27 @@
                 captures: "Captures",
                 attempts: "Tentatives",
                 accuracy: "Précision",
-                footer: "Fait pour s'amuser — aucun cookie.",
+                footer: "Fait avec panique — attrapez-les tous.",
                 taunts: ["Trop lent !", "Même pas mal !", "Oups, raté !", "Ahah, dans tes rêves !", "Vise mieux !", "Vraiment ?", "Mes plumes te saluent !"],
-                victories: ["BIEN JOUÉ !", "Incroyable !", "Tu l'as eu !", "Maître des canards !", "Champion !"]
+                victories: ["BIEN JOUÉ !", "Incroyable !", "Tu l'as eu !", "Maître des canards !", "Champion !"],
+                challengeBtn: "Défi 1:00",
+                bestLabel: "Record",
+                timeUp: "TEMPS ÉCOULÉ !",
+                newRecord: "NOUVEAU RECORD !",
+                finalScore: "Score final : ",
+                modalTitle: "Duck Panic : Le Guide Ultime",
+                modalH1: "La Mythologie du Canard",
+                modalP1: "Ce jeu absurde est conçu pour tester vos nerfs. Le canard paniqué est une espèce protégée.",
+                modalH2: "Défi 1 Minute",
+                modalP2: "60 secondes. Un canard. Zéro pitié. Battez votre propre record.",
+                modalH3: "Conseils",
+                modalLi1: "Fixez le canard, ne clignez pas.",
+                modalLi2: "Prévoyez une souris de secours.",
+                modalLi3: "Le canard sent la peur.",
+                modalH5: "Canard & Jeux Drôles",
+                modalP5: "Vous cherchez un jeu inutile ou un jeu absurde pour briller en société ? Duck Panic est le mini-jeu drôle ultime pour navigateur. Ici, attraper un canard paniqué est un sport de haut niveau, gratuit et sans inscription. Que ce soit pour un défi 1 minute ou pour exploser votre record de score, vous êtes au bon endroit pour perdre votre temps intelligemment. Un canard averti en vaut deux, mais un canard paniqué vaut tout l'or du monde. Coin.",
+                modalClose: "Fermer",
+                replay: "REJOUER"
             },
             en: {
                 title: "Duck Panic",
@@ -273,57 +399,69 @@
                 captures: "Captures",
                 attempts: "Attempts",
                 accuracy: "Accuracy",
-                footer: "Made for fun — no cookies.",
+                footer: "Made with panic — catch them all.",
                 taunts: ["Too slow!", "Not even close!", "Oops, missed!", "Haha, in your dreams!", "Better luck next time!", "Seriously?", "My feathers salute you!"],
-                victories: ["WELL DONE!", "Incredible reflexes!", "You got it!", "Duck Master!", "World Champion!"]
+                victories: ["WELL DONE!", "Incredible reflexes!", "You got it!", "Duck Master!", "World Champion!"],
+                challengeBtn: "1:00 Challenge",
+                bestLabel: "Record",
+                timeUp: "TIME'S UP!",
+                newRecord: "NEW RECORD!",
+                finalScore: "Final Score: ",
+                modalTitle: "Duck Panic: Ultimate Guide",
+                modalH1: "Duck Mythology",
+                modalP1: "This absurd game is built to test your nerves. The panicking duck is a protected species.",
+                modalH2: "1 Minute Challenge",
+                modalP2: "60 seconds. One duck. Zero mercy. Beat your record.",
+                modalH3: "Tips",
+                modalLi1: "Stare at the duck, don't blink.",
+                modalLi2: "Have a spare mouse ready.",
+                modalLi3: "The duck smells your fear.",
+                modalH5: "Duck & Funny Games",
+                modalP5: "Looking for a useless game or an absurd game to impress your friends? Duck Panic is the ultimate funny mini-game for your browser. Here, catching a panicked duck is a top-tier sport, free and with no registration. Whether it's for a 1-minute challenge or to explode your score record, you're in the right place to waste your time intelligently. A forewarned duck is worth two, but a panicked duck is worth all the gold in the world. Quack.",
+                modalClose: "Close",
+                replay: "REPLAY"
             }
         };
 
-        const PANIC_ZONE = { desktop: 250, mobile: 180 };
+        const PANIC_ZONE = { desktop: 260, mobile: 190 };
         const DUCK_SIZE = { desktop: 80, mobile: 70 };
 
-        // --- State ---
-        // Stats reset to 0 on refresh as requested
         let lang = localStorage.getItem('duck-panic-lang') || (navigator.language.startsWith('fr') ? 'fr' : 'en');
         let stats = { captures: 0, attempts: 0 };
+        let bestScore60 = parseInt(localStorage.getItem('duck-panic-best-60')) || 0;
         
         let posX = window.innerWidth / 2;
         let posY = window.innerHeight / 2;
-        let velX = 0;
-        let velY = 0;
-        let mouseX = -1000;
-        let mouseY = -1000;
-        let mouseXPrev = -1000;
-        let mouseYPrev = -1000;
+        let velX = 0, velY = 0;
+        let mouseX = -1000, mouseY = -1000;
+        let mouseXPrev = -1000, mouseYPrev = -1000;
         let lastTime = 0;
-        let isCaught = false;
-        let isInvulnerable = false;
+        let isCaught = false, isInvulnerable = false;
         let isMobile = window.innerWidth < 768;
-        let isResetting = false;
-        let reservedBottom = 160; 
+        let reservedBottom = 180; 
 
-        // Anti-corner / Panic mechanics
-        let lastBurstTime = 0;
-        let distPrev = 0;
+        let isChallengeActive = false;
+        let challengeTimeLeft = 60;
+        let challengeInterval = null;
 
-        // Stuck detection state
-        let prevPosX = 0;
-        let prevPosY = 0;
-        let stuckFrames = 0;
+        let lastBurstTime = 0, distPrev = 0;
+        let prevPosX = 0, prevPosY = 0, stuckFrames = 0;
 
         const duckEl = document.getElementById('duck');
         const duckEmoji = duckEl.querySelector('.duck-emoji');
         const gameArea = document.getElementById('game-area');
         const popup = document.getElementById('popup');
         const statsPanel = document.querySelector('.stats-panel');
+        const modal = document.getElementById('modal-info');
+        const challengeBtn = document.getElementById('btn-challenge');
+        const challengeBtnLabel = document.getElementById('ui-btn-challenge');
 
-        // --- Functions ---
         function updateReservedBottom() {
             if (statsPanel) {
                 const statsHeight = statsPanel.getBoundingClientRect().height;
                 const style = window.getComputedStyle(statsPanel);
                 const bottomValue = parseFloat(style.bottom) || 16;
-                reservedBottom = statsHeight + bottomValue + 20; 
+                reservedBottom = statsHeight + bottomValue + 40; 
             }
         }
 
@@ -334,46 +472,86 @@
             document.getElementById('ui-captures-label').innerText = t.captures;
             document.getElementById('ui-attempts-label').innerText = t.attempts;
             document.getElementById('ui-accuracy-label').innerText = t.accuracy;
+            document.getElementById('ui-best-label').innerText = t.bestLabel;
             document.getElementById('ui-footer').innerText = t.footer;
+            challengeBtnLabel.innerText = isChallengeActive ? challengeTimeLeft + 's' : t.challengeBtn;
+
+            document.getElementById('modal-title').innerText = t.modalTitle;
+            document.getElementById('modal-h1').innerText = t.modalH1;
+            document.getElementById('modal-p1').innerText = t.modalP1;
+            document.getElementById('modal-h2').innerText = t.modalH2;
+            document.getElementById('modal-p2').innerText = t.modalP2;
+            document.getElementById('modal-h3').innerText = t.modalH3;
+            document.getElementById('modal-li1').innerText = t.modalLi1;
+            document.getElementById('modal-li2').innerText = t.modalLi2;
+            document.getElementById('modal-li3').innerText = t.modalLi3;
+            document.getElementById('modal-h5').innerText = t.modalH5;
+            document.getElementById('modal-p5').innerText = t.modalP5;
+            document.getElementById('modal-close-btn').innerText = t.modalClose;
             localStorage.setItem('duck-panic-lang', lang);
         }
 
         function updateStatsUI() {
             document.getElementById('stat-captures').innerText = stats.captures;
             document.getElementById('stat-attempts').innerText = stats.attempts;
-            const accuracy = stats.attempts > 0 ? Math.round((stats.captures / stats.attempts) * 100) : 0;
-            document.getElementById('stat-accuracy').innerText = accuracy;
-            // Persistence for current session
-            try {
-                localStorage.setItem('duck-panic-stats', JSON.stringify(stats));
-            } catch (e) {
-                console.warn('Storage failed', e);
+            const acc = stats.attempts > 0 ? Math.round((stats.captures / stats.attempts) * 100) : 0;
+            document.getElementById('stat-accuracy').innerText = acc;
+            document.getElementById('stat-best').innerText = bestScore60;
+        }
+
+        function startChallenge() {
+            if (isChallengeActive) return;
+            isChallengeActive = true;
+            // Reset global stats as requested
+            stats.captures = 0;
+            stats.attempts = 0;
+            challengeTimeLeft = 60;
+            challengeBtn.classList.add('active');
+            updateI18n();
+            updateStatsUI();
+
+            challengeInterval = setInterval(() => {
+                challengeTimeLeft--;
+                challengeBtnLabel.innerText = challengeTimeLeft + 's';
+                if (challengeTimeLeft <= 0) endChallenge();
+            }, 1000);
+
+            spawnDuck();
+            updateReservedBottom();
+        }
+
+        function endChallenge() {
+            clearInterval(challengeInterval);
+            isChallengeActive = false;
+            challengeBtn.classList.remove('active');
+            
+            let msg = I18N[lang].timeUp + " " + I18N[lang].finalScore + stats.captures;
+            if (stats.captures > bestScore60) {
+                bestScore60 = stats.captures;
+                localStorage.setItem('duck-panic-best-60', bestScore60);
+                msg = I18N[lang].newRecord + " " + stats.captures + " 🦆";
             }
+
+            showPopup(msg, 'victory');
+            updateI18n();
+            updateStatsUI();
         }
 
         function spawnDuck() {
             const size = isMobile ? DUCK_SIZE.mobile : DUCK_SIZE.desktop;
             const margin = 100;
-
-            let newX, newY, dist;
-            let attempts = 0;
+            let newX, newY, dist, atts = 0;
             do {
                 newX = margin + Math.random() * (window.innerWidth - size - margin * 2);
                 newY = margin + Math.random() * (window.innerHeight - size - margin * 2 - reservedBottom);
                 dist = Math.sqrt((newX - mouseX) ** 2 + (newY - mouseY) ** 2);
-                attempts++;
-            } while (dist < 300 && attempts < 15);
+                atts++;
+            } while (dist < 300 && atts < 15);
 
-            posX = newX;
-            posY = newY;
-            velX = (Math.random() - 0.5) * 5;
-            velY = (Math.random() - 0.5) * 5;
-            isCaught = false;
-            isInvulnerable = false;
-            stuckFrames = 0;
-            lastBurstTime = 0;
-            duckEl.classList.remove('caught-anim');
-            duckEl.style.opacity = '1';
+            posX = newX; posY = newY;
+            velX = (Math.random() - 0.5) * 6; velY = (Math.random() - 0.5) * 6;
+            isCaught = false; isInvulnerable = false; stuckFrames = 0; lastBurstTime = 0;
+            duckEl.classList.remove('caught-anim'); duckEl.style.opacity = '1';
         }
 
         function showPopup(text, type) {
@@ -381,39 +559,28 @@
             popup.style.display = 'block';
             popup.style.backgroundColor = type === 'victory' ? 'var(--green-500)' : 
                                          (type === 'taunt' ? 'var(--orange-500)' : 'var(--blue-600)');
-            
-            setTimeout(() => {
-                popup.style.display = 'none';
-            }, 2000);
+            setTimeout(() => { popup.style.display = 'none'; }, 2800);
         }
 
         function triggerConfetti() {
-            const colors = ['#FFD700', '#FF6B6B', '#4D96FF', '#6BCB77'];
+            const colors = ['#FFD700', '#FF6B6B', '#4D96FF', '#6BCB77', '#FF9F45'];
             for (let i = 0; i < 40; i++) {
                 const c = document.createElement('div');
                 c.className = 'confetti';
                 c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                const size = Math.random() * 10 + 5;
-                c.style.width = size + 'px';
-                c.style.height = size + 'px';
-                
+                const size = Math.random() * 10 + 6;
+                c.style.width = size + 'px'; c.style.height = size + 'px';
                 const startX = posX + (isMobile ? DUCK_SIZE.mobile : DUCK_SIZE.desktop) / 2;
                 const startY = posY + (isMobile ? DUCK_SIZE.mobile : DUCK_SIZE.desktop) / 2;
-                c.style.left = startX + 'px';
-                c.style.top = startY + 'px';
-                
+                c.style.left = startX + 'px'; c.style.top = startY + 'px';
                 gameArea.appendChild(c);
-
                 const angle = Math.random() * Math.PI * 2;
-                const dist = 50 + Math.random() * 200;
-                const tx = Math.cos(angle) * dist;
-                const ty = Math.sin(angle) * dist;
-
+                const dst = 60 + Math.random() * 200;
+                const tx = Math.cos(angle) * dst; const ty = Math.sin(angle) * dst;
                 const anim = c.animate([
                     { transform: 'translate(0,0) scale(1)', opacity: 1 },
                     { transform: `translate(${tx}px, ${ty}px) scale(0)`, opacity: 0 }
                 ], { duration: 1500, easing: 'cubic-bezier(0, .9, .57, 1)' });
-
                 anim.onfinish = () => c.remove();
             }
         }
@@ -424,150 +591,94 @@
 
             if (!isCaught) {
                 const size = isMobile ? DUCK_SIZE.mobile : DUCK_SIZE.desktop;
-                const edgeMarginStandard = isMobile ? 22 : 28;
-                const minSpeed = isMobile ? 2.0 : 2.5;
-                const panicRadius = Math.min(550, (isMobile ? PANIC_ZONE.mobile : PANIC_ZONE.desktop) + (stats.attempts * 1.8));
-                const speedScale = Math.min(2.8, 1 + (stats.attempts * 0.008));
-                
+                const minSpeed = isMobile ? 2.2 : 2.8;
+                const panicRadius = Math.min(580, (isMobile ? PANIC_ZONE.mobile : PANIC_ZONE.desktop) + (stats.attempts * 1.5));
+                const speedScale = Math.min(2.8, 1 + (stats.attempts * 0.007));
                 const dx = (posX + size / 2) - mouseX;
                 const dy = (posY + size / 2) - mouseY;
                 const distNow = Math.sqrt(dx * dx + dy * dy) || 1;
 
-                // --- 1. Core Repulsion ---
                 if (distNow < panicRadius) {
-                    const force = (1 - distNow / panicRadius) * (3.0 * speedScale);
+                    const force = (1 - distNow / panicRadius) * (3.2 * speedScale);
                     velX += (dx / distNow) * force;
                     velY += (dy / distNow) * force;
                 } else {
-                    velX += (Math.random() - 0.5) * 0.3;
-                    velY += (Math.random() - 0.5) * 0.3;
+                    velX += (Math.random() - 0.5) * 0.4;
+                    velY += (Math.random() - 0.5) * 0.4;
                 }
 
-                // --- 2. ANTI-TRAP / ANTI-SLIDE LOGIC ---
-                const near = isMobile ? 46 : 58;
-                const maxX = window.innerWidth - size;
-                const maxY = window.innerHeight - size - reservedBottom;
+                const near = isMobile ? 50 : 65;
+                const maxX = window.innerWidth - size, maxY = window.innerHeight - size - reservedBottom;
 
                 const leftProx = Math.max(0, (near - posX) / near);
                 const rightProx = Math.max(0, (near - (maxX - posX)) / near);
                 const topProx = Math.max(0, (near - posY) / near);
                 const bottomProx = Math.max(0, (near - (maxY - posY)) / near);
 
-                // Wall Escape Force
                 if (distNow < panicRadius * 0.7) {
-                    const wallPush = Math.min(6, (isMobile ? 2.8 : 3.6) * speedScale);
+                    const wallPush = Math.min(6.5, (isMobile ? 3.0 : 3.8) * speedScale);
                     velX += (leftProx - rightProx) * wallPush;
                     velY += (topProx - bottomProx) * wallPush;
                 }
 
-                // Forced Inward Velocity
                 const nearEdge = (posX < near || posX > maxX - near || posY < near || posY > maxY - near);
-                if (nearEdge && distNow < panicRadius * 0.6) {
-                    const cx = window.innerWidth / 2;
-                    const cy = maxY / 2;
-                    const tx = cx - (posX + size / 2);
-                    const ty = cy - (posY + size / 2);
+                if (nearEdge && distNow < panicRadius * 0.65) {
+                    const cx = window.innerWidth / 2, cy = maxY / 2;
+                    const tx = cx - (posX + size / 2), ty = cy - (posY + size / 2);
                     const tm = Math.hypot(tx, ty) || 1;
-                    const desired = (isMobile ? 6.5 : 8.0) * speedScale;
+                    const desired = (isMobile ? 7.0 : 8.5) * speedScale;
                     const sp = Math.hypot(velX, velY);
-                    if (sp < desired) {
-                        velX += (tx / tm) * (desired - sp) * 0.9;
-                        velY += (ty / tm) * (desired - sp) * 0.9;
+                    if (sp < desired) { 
+                        velX += (tx / tm) * (desired - sp) * 0.85; 
+                        velY += (ty / tm) * (desired - sp) * 0.85; 
                     }
                 }
 
-                // Anti-corner Panic Burst Detection
-                const mouseMovedDist = Math.sqrt((mouseX - mouseXPrev)**2 + (mouseY - mouseYPrev)**2);
-                const approachSpeed = deltaTime > 0 ? mouseMovedDist / deltaTime : 0;
-                const approachDelta = distPrev - distNow;
                 const now = performance.now();
-                
-                if (nearEdge && (now - lastBurstTime > 700)) {
-                    if (distNow < panicRadius * 0.55 && (approachDelta > 35 || approachSpeed > 1.0)) {
-                        const burst = (isMobile ? 28 : 35) * Math.min(1.6, 1 + (stats.attempts * 0.005));
-                        const centerX = window.innerWidth / 2;
-                        const centerY = maxY / 2;
-                        const toCenterX = centerX - (posX + size / 2);
-                        const toCenterY = centerY - (posY + size / 2);
-                        const toCenterMag = Math.sqrt(toCenterX**2 + toCenterY**2) || 1;
-                        const dirX = (dx / distNow) * 0.7 + (toCenterX / toCenterMag) * 0.3;
-                        const dirY = (dy / distNow) * 0.7 + (toCenterY / toCenterMag) * 0.3;
+                if (nearEdge && (now - lastBurstTime > 750)) {
+                    if (distNow < panicRadius * 0.58 && (distPrev - distNow) > 38) {
+                        const burst = (isMobile ? 30 : 38) * Math.min(1.6, 1 + (stats.attempts * 0.005));
+                        const cx = window.innerWidth / 2, cy = maxY / 2;
+                        const tx = cx - (posX + size / 2), ty = cy - (posY + size / 2);
+                        const tm = Math.hypot(tx, ty) || 1;
+                        const dirX = (dx / distNow) * 0.75 + (tx / tm) * 0.25;
+                        const dirY = (dy / distNow) * 0.75 + (ty / tm) * 0.25;
                         const dirMag = Math.sqrt(dirX**2 + dirY**2) || 1;
-                        velX = (dirX / dirMag) * burst + (Math.random() - 0.5) * 5;
-                        velY = (dirY / dirMag) * burst + (Math.random() - 0.5) * 5;
+                        velX = (dirX / dirMag) * burst; velY = (dirY / dirMag) * burst;
                         lastBurstTime = now;
                     }
                 }
 
-                // --- 3. Damping & Integration ---
                 const friction = (now - lastBurstTime < 250) ? 0.98 : 0.95;
-                velX *= friction;
-                velY *= friction;
-                posX += velX * (deltaTime / 16);
-                posY += velY * (deltaTime / 16);
+                velX *= friction; velY *= friction;
+                posX += velX * (deltaTime / 16); posY += velY * (deltaTime / 16);
 
-                // --- 4. Stuck Detector ---
                 const distMoved = Math.sqrt((posX - prevPosX) ** 2 + (posY - prevPosY) ** 2);
-                if (distMoved < 0.5 && nearEdge) {
-                    stuckFrames++;
-                } else {
-                    stuckFrames = 0;
-                }
-
+                if (distMoved < 0.6 && nearEdge) stuckFrames++; else stuckFrames = 0;
                 if (stuckFrames > 45) { 
-                    const cx = window.innerWidth / 2;
-                    const cy = maxY / 2;
-                    const tx = cx - (posX + size / 2);
-                    const ty = cy - (posY + size / 2);
-                    const tm = Math.hypot(tx, ty) || 1;
-                    const kick = isMobile ? 10 : 12;
-                    velX += (tx / tm) * kick;
-                    velY += (ty / tm) * kick;
-                    stuckFrames = 0;
+                    const cx = window.innerWidth / 2, cy = maxY / 2;
+                    const tx = cx - (posX + size / 2), ty = cy - (posY + size / 2), tm = Math.hypot(tx, ty) || 1;
+                    const kick = isMobile ? 12 : 15;
+                    velX += (tx / tm) * kick; velY += (ty / tm) * kick; stuckFrames = 0;
                 }
-                prevPosX = posX;
-                prevPosY = posY;
+                prevPosX = posX; prevPosY = posY;
 
-                // --- 5. Collision & Clamping with Boost ---
-                const bounceMin = isMobile ? 5.5 : 6.5;
-                if (posX < 0) { 
-                    posX = 0; 
-                    velX = Math.max(Math.abs(velX), bounceMin); 
-                    velY += (Math.random() - 0.5) * 3.5; 
-                }
-                if (posX > maxX) { 
-                    posX = maxX; 
-                    velX = -Math.max(Math.abs(velX), bounceMin); 
-                    velY += (Math.random() - 0.5) * 3.5; 
-                }
-                if (posY < 0) { 
-                    posY = 0; 
-                    velY = Math.max(Math.abs(velY), bounceMin); 
-                    velX += (Math.random() - 0.5) * 3.5; 
-                }
-                if (posY > maxY) {
-                    posY = maxY;
-                    velY = -Math.max(Math.abs(velY), bounceMin);
-                    velX += (Math.random() - 0.5) * 3.5; 
-                }
+                const bounceMin = isMobile ? 6.0 : 7.0;
+                if (posX < 0) { posX = 0; velX = Math.max(Math.abs(velX), bounceMin); }
+                if (posX > maxX) { posX = maxX; velX = -Math.max(Math.abs(velX), bounceMin); }
+                if (posY < 0) { posY = 0; velY = Math.max(Math.abs(velY), bounceMin); }
+                if (posY > maxY) { posY = maxY; velY = -Math.max(Math.abs(velY), bounceMin); }
 
-                // Minimum drift
                 const curSp = Math.hypot(velX, velY);
                 if (curSp < minSpeed && !isCaught) {
                     const a = Math.random() * Math.PI * 2;
-                    velX += Math.cos(a) * 1.5;
-                    velY += Math.sin(a) * 1.5;
+                    velX += Math.cos(a) * 1.8; velY += Math.sin(a) * 1.8;
                 }
+                distPrev = distNow; mouseXPrev = mouseX; mouseYPrev = mouseY;
 
-                // Update input state
-                distPrev = distNow;
-                mouseXPrev = mouseX;
-                mouseYPrev = mouseY;
-
-                // --- 6. Rendering ---
-                const rotation = velX * 3.5;
+                const rotation = velX * 4;
                 const baseScale = isInvulnerable ? 0.85 : 1;
-                const breatheScale = Math.sin(time / 200) * 0.05;
+                const breatheScale = Math.sin(time / 180) * 0.06;
                 duckEl.style.transform = `translate(${posX}px, ${posY}px) rotate(${rotation}deg) scale(${baseScale + breatheScale})`;
                 duckEl.style.opacity = isInvulnerable ? '0.6' : '1';
                 duckEmoji.style.transform = velX < 0 ? 'scaleX(-1)' : 'scaleX(1)';
@@ -575,33 +686,27 @@
             requestAnimationFrame(loop);
         }
 
-        // --- Handlers ---
         function handleInput(e) {
             const targetX = e.clientX || (e.touches ? e.touches[0].clientX : mouseX);
             const targetY = e.clientY || (e.touches ? e.touches[0].clientY : mouseY);
-            mouseX = targetX;
-            mouseY = targetY;
+            mouseX = targetX; mouseY = targetY;
         }
 
         function handleMiss(e) {
-            if (isResetting || e.target.closest('button') || e.target.closest('.stats-panel') || isCaught) return;
+            if (e.target.closest('button') || e.target.closest('.modal') || isCaught) return;
             stats.attempts++;
             updateStatsUI();
             const taunts = I18N[lang].taunts;
             showPopup(taunts[Math.floor(Math.random() * taunts.length)], 'taunt');
             const size = isMobile ? DUCK_SIZE.mobile : DUCK_SIZE.desktop;
-            const dx = (posX + size / 2) - mouseX;
-            const dy = (posY + size / 2) - mouseY;
+            const dx = (posX + size / 2) - mouseX, dy = (posY + size / 2) - mouseY;
             const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-            const boost = 28 + (stats.attempts * 0.15);
-            velX += (dx / dist) * boost;
-            velY += (dy / dist) * boost;
-            isInvulnerable = true;
-            setTimeout(() => isInvulnerable = false, 250);
+            const boost = 25 + (stats.attempts * 0.12);
+            velX += (dx / dist) * boost; velY += (dy / dist) * boost;
+            isInvulnerable = true; setTimeout(() => isInvulnerable = false, 250);
         }
 
         function handleCatch(e) {
-            if (isResetting) return;
             e.preventDefault(); e.stopPropagation();
             if (isCaught || isInvulnerable) return;
             isCaught = true;
@@ -615,12 +720,7 @@
             setTimeout(spawnDuck, 600);
         }
 
-        // --- Initialization ---
         window.onload = () => {
-            // Force reset on load
-            localStorage.removeItem('duck-panic-stats');
-            stats = { captures: 0, attempts: 0 };
-            
             updateReservedBottom();
             updateI18n();
             updateStatsUI();
@@ -633,11 +733,13 @@
             duckEl.addEventListener('mousedown', handleCatch);
             duckEl.addEventListener('touchstart', handleCatch, { passive: false });
 
-            window.addEventListener('resize', () => {
-                isMobile = window.innerWidth < 768;
-                updateReservedBottom();
-                spawnDuck();
+            challengeBtn.addEventListener('click', startChallenge);
+            document.getElementById('btn-info').addEventListener('click', () => modal.style.display = 'flex');
+            const closeModal = () => modal.style.display = 'none';
+            modal.addEventListener('click', (e) => { 
+                if (e.target === modal || e.target.id === 'modal-close-btn') closeModal(); 
             });
+            window.addEventListener('resize', () => { isMobile = window.innerWidth < 768; updateReservedBottom(); spawnDuck(); });
         };
     </script>
 </body>
