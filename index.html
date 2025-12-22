@@ -283,8 +283,9 @@
         const DUCK_SIZE = { desktop: 80, mobile: 70 };
 
         // --- State ---
+        // Stats reset to 0 on refresh as requested
         let lang = localStorage.getItem('duck-panic-lang') || (navigator.language.startsWith('fr') ? 'fr' : 'en');
-        let stats = JSON.parse(localStorage.getItem('duck-panic-stats')) || { captures: 0, attempts: 0 };
+        let stats = { captures: 0, attempts: 0 };
         
         let posX = window.innerWidth / 2;
         let posY = window.innerHeight / 2;
@@ -342,6 +343,7 @@
             document.getElementById('stat-attempts').innerText = stats.attempts;
             const accuracy = stats.attempts > 0 ? Math.round((stats.captures / stats.attempts) * 100) : 0;
             document.getElementById('stat-accuracy').innerText = accuracy;
+            // Persistence for current session
             try {
                 localStorage.setItem('duck-panic-stats', JSON.stringify(stats));
             } catch (e) {
@@ -423,23 +425,15 @@
             if (!isCaught) {
                 const size = isMobile ? DUCK_SIZE.mobile : DUCK_SIZE.desktop;
                 const edgeMarginStandard = isMobile ? 22 : 28;
-                const panicEdgeMargin = isMobile ? 30 : 40;
                 const minSpeed = isMobile ? 2.0 : 2.5;
-                
-                const basePanic = isMobile ? PANIC_ZONE.mobile : PANIC_ZONE.desktop;
-                const panicRadius = Math.min(550, basePanic + (stats.attempts * 1.8));
+                const panicRadius = Math.min(550, (isMobile ? PANIC_ZONE.mobile : PANIC_ZONE.desktop) + (stats.attempts * 1.8));
                 const speedScale = Math.min(2.8, 1 + (stats.attempts * 0.008));
                 
                 const dx = (posX + size / 2) - mouseX;
                 const dy = (posY + size / 2) - mouseY;
                 const distNow = Math.sqrt(dx * dx + dy * dy) || 1;
 
-                // Approach speed calculation
-                const mouseMovedDist = Math.sqrt((mouseX - mouseXPrev)**2 + (mouseY - mouseYPrev)**2);
-                const approachSpeed = deltaTime > 0 ? mouseMovedDist / deltaTime : 0;
-                const approachDelta = distPrev - distNow;
-
-                // --- 1. Core Repulsion Logic ---
+                // --- 1. Core Repulsion ---
                 if (distNow < panicRadius) {
                     const force = (1 - distNow / panicRadius) * (3.0 * speedScale);
                     velX += (dx / distNow) * force;
@@ -449,118 +443,135 @@
                     velY += (Math.random() - 0.5) * 0.3;
                 }
 
-                // --- 2. ANTI-CORNER / PANIC BURST ---
-                const isNearEdge = (posX < panicEdgeMargin) || 
-                                   (posX > window.innerWidth - size - panicEdgeMargin) || 
-                                   (posY < panicEdgeMargin) || 
-                                   (posY > window.innerHeight - size - reservedBottom - panicEdgeMargin);
+                // --- 2. ANTI-TRAP / ANTI-SLIDE LOGIC ---
+                const near = isMobile ? 46 : 58;
+                const maxX = window.innerWidth - size;
+                const maxY = window.innerHeight - size - reservedBottom;
 
+                const leftProx = Math.max(0, (near - posX) / near);
+                const rightProx = Math.max(0, (near - (maxX - posX)) / near);
+                const topProx = Math.max(0, (near - posY) / near);
+                const bottomProx = Math.max(0, (near - (maxY - posY)) / near);
+
+                // Wall Escape Force
+                if (distNow < panicRadius * 0.7) {
+                    const wallPush = Math.min(6, (isMobile ? 2.8 : 3.6) * speedScale);
+                    velX += (leftProx - rightProx) * wallPush;
+                    velY += (topProx - bottomProx) * wallPush;
+                }
+
+                // Forced Inward Velocity
+                const nearEdge = (posX < near || posX > maxX - near || posY < near || posY > maxY - near);
+                if (nearEdge && distNow < panicRadius * 0.6) {
+                    const cx = window.innerWidth / 2;
+                    const cy = maxY / 2;
+                    const tx = cx - (posX + size / 2);
+                    const ty = cy - (posY + size / 2);
+                    const tm = Math.hypot(tx, ty) || 1;
+                    const desired = (isMobile ? 6.5 : 8.0) * speedScale;
+                    const sp = Math.hypot(velX, velY);
+                    if (sp < desired) {
+                        velX += (tx / tm) * (desired - sp) * 0.9;
+                        velY += (ty / tm) * (desired - sp) * 0.9;
+                    }
+                }
+
+                // Anti-corner Panic Burst Detection
+                const mouseMovedDist = Math.sqrt((mouseX - mouseXPrev)**2 + (mouseY - mouseYPrev)**2);
+                const approachSpeed = deltaTime > 0 ? mouseMovedDist / deltaTime : 0;
+                const approachDelta = distPrev - distNow;
                 const now = performance.now();
-                if (isNearEdge && (now - lastBurstTime > 700)) {
-                    // Trigger if rapid approach detected within a sub-radius
+                
+                if (nearEdge && (now - lastBurstTime > 700)) {
                     if (distNow < panicRadius * 0.55 && (approachDelta > 35 || approachSpeed > 1.0)) {
-                        const difficultyScale = Math.min(1.6, 1 + (stats.attempts * 0.005));
-                        const baseBurst = isMobile ? 28 : 35;
-                        const burst = baseBurst * difficultyScale;
-
-                        // Direction away from mouse + center bias
+                        const burst = (isMobile ? 28 : 35) * Math.min(1.6, 1 + (stats.attempts * 0.005));
                         const centerX = window.innerWidth / 2;
-                        const centerY = (window.innerHeight - reservedBottom) / 2;
+                        const centerY = maxY / 2;
                         const toCenterX = centerX - (posX + size / 2);
                         const toCenterY = centerY - (posY + size / 2);
                         const toCenterMag = Math.sqrt(toCenterX**2 + toCenterY**2) || 1;
-
                         const dirX = (dx / distNow) * 0.7 + (toCenterX / toCenterMag) * 0.3;
                         const dirY = (dy / distNow) * 0.7 + (toCenterY / toCenterMag) * 0.3;
                         const dirMag = Math.sqrt(dirX**2 + dirY**2) || 1;
-
                         velX = (dirX / dirMag) * burst + (Math.random() - 0.5) * 5;
                         velY = (dirY / dirMag) * burst + (Math.random() - 0.5) * 5;
-
                         lastBurstTime = now;
                     }
                 }
 
-                // Update state for next frame
-                distPrev = distNow;
-                mouseXPrev = mouseX;
-                mouseYPrev = mouseY;
-
-                // --- 3. Damping & Nudges ---
-                const pushStrength = Math.min(0.4, 0.15 + (stats.attempts * 0.001));
-                if (posX < edgeMarginStandard) velX += pushStrength;
-                if (posX > window.innerWidth - size - edgeMarginStandard) velX -= pushStrength;
-                if (posY < edgeMarginStandard) velY += pushStrength;
-                if (posY > window.innerHeight - size - reservedBottom - edgeMarginStandard) velY -= pushStrength;
-
-                // Less damping if recently bursted to keep speed
+                // --- 3. Damping & Integration ---
                 const friction = (now - lastBurstTime < 250) ? 0.98 : 0.95;
                 velX *= friction;
                 velY *= friction;
-
                 posX += velX * (deltaTime / 16);
                 posY += velY * (deltaTime / 16);
 
                 // --- 4. Stuck Detector ---
                 const distMoved = Math.sqrt((posX - prevPosX) ** 2 + (posY - prevPosY) ** 2);
-                if (distMoved < 0.5 && (posX < edgeMarginStandard * 2 || posX > window.innerWidth - size - edgeMarginStandard * 2 || posY < edgeMarginStandard * 2 || posY > window.innerHeight - size - reservedBottom - edgeMarginStandard * 2)) {
+                if (distMoved < 0.5 && nearEdge) {
                     stuckFrames++;
                 } else {
                     stuckFrames = 0;
                 }
 
                 if (stuckFrames > 45) { 
-                    const centerX = window.innerWidth / 2;
-                    const centerY = (window.innerHeight - reservedBottom) / 2;
-                    const toCenterX = centerX - (posX + size / 2);
-                    const toCenterY = centerY - (posY + size / 2);
-                    const mag = Math.sqrt(toCenterX**2 + toCenterY**2) || 1;
-                    velX += (toCenterX / mag) * 4;
-                    velY += (toCenterY / mag) * 4;
+                    const cx = window.innerWidth / 2;
+                    const cy = maxY / 2;
+                    const tx = cx - (posX + size / 2);
+                    const ty = cy - (posY + size / 2);
+                    const tm = Math.hypot(tx, ty) || 1;
+                    const kick = isMobile ? 10 : 12;
+                    velX += (tx / tm) * kick;
+                    velY += (ty / tm) * kick;
                     stuckFrames = 0;
                 }
                 prevPosX = posX;
                 prevPosY = posY;
 
-                // --- 5. Collision & Clamping ---
+                // --- 5. Collision & Clamping with Boost ---
+                const bounceMin = isMobile ? 5.5 : 6.5;
                 if (posX < 0) { 
                     posX = 0; 
-                    velX = Math.abs(velX) * 0.8 + 1.5; 
-                    velY += (Math.random() - 0.5) * 2.0; 
+                    velX = Math.max(Math.abs(velX), bounceMin); 
+                    velY += (Math.random() - 0.5) * 3.5; 
                 }
-                if (posX > window.innerWidth - size) { 
-                    posX = window.innerWidth - size; 
-                    velX = -Math.abs(velX) * 0.8 - 1.5; 
-                    velY += (Math.random() - 0.5) * 2.0; 
+                if (posX > maxX) { 
+                    posX = maxX; 
+                    velX = -Math.max(Math.abs(velX), bounceMin); 
+                    velY += (Math.random() - 0.5) * 3.5; 
                 }
                 if (posY < 0) { 
                     posY = 0; 
-                    velY = Math.abs(velY) * 0.8 + 1.5; 
-                    velX += (Math.random() - 0.5) * 2.0; 
+                    velY = Math.max(Math.abs(velY), bounceMin); 
+                    velX += (Math.random() - 0.5) * 3.5; 
                 }
-                if (posY > window.innerHeight - size - reservedBottom) {
-                    posY = window.innerHeight - size - reservedBottom;
-                    velY = -Math.abs(velY) * 0.8 - 1.5;
-                    velX += (Math.random() - 0.5) * 2.0; 
-                }
-
-                const currentSpeed = Math.sqrt(velX * velX + velY * velY);
-                if (currentSpeed < minSpeed && !isCaught) {
-                    const angle = Math.random() * Math.PI * 2;
-                    velX += Math.cos(angle) * 1.5;
-                    velY += Math.sin(angle) * 1.5;
+                if (posY > maxY) {
+                    posY = maxY;
+                    velY = -Math.max(Math.abs(velY), bounceMin);
+                    velX += (Math.random() - 0.5) * 3.5; 
                 }
 
-                // --- 6. Visual Transforms ---
+                // Minimum drift
+                const curSp = Math.hypot(velX, velY);
+                if (curSp < minSpeed && !isCaught) {
+                    const a = Math.random() * Math.PI * 2;
+                    velX += Math.cos(a) * 1.5;
+                    velY += Math.sin(a) * 1.5;
+                }
+
+                // Update input state
+                distPrev = distNow;
+                mouseXPrev = mouseX;
+                mouseYPrev = mouseY;
+
+                // --- 6. Rendering ---
                 const rotation = velX * 3.5;
                 const baseScale = isInvulnerable ? 0.85 : 1;
                 const breatheScale = Math.sin(time / 200) * 0.05;
-                
                 duckEl.style.transform = `translate(${posX}px, ${posY}px) rotate(${rotation}deg) scale(${baseScale + breatheScale})`;
                 duckEl.style.opacity = isInvulnerable ? '0.6' : '1';
                 duckEmoji.style.transform = velX < 0 ? 'scaleX(-1)' : 'scaleX(1)';
             }
-
             requestAnimationFrame(loop);
         }
 
@@ -574,12 +585,10 @@
 
         function handleMiss(e) {
             if (isResetting || e.target.closest('button') || e.target.closest('.stats-panel') || isCaught) return;
-            
             stats.attempts++;
             updateStatsUI();
             const taunts = I18N[lang].taunts;
             showPopup(taunts[Math.floor(Math.random() * taunts.length)], 'taunt');
-            
             const size = isMobile ? DUCK_SIZE.mobile : DUCK_SIZE.desktop;
             const dx = (posX + size / 2) - mouseX;
             const dy = (posY + size / 2) - mouseY;
@@ -587,32 +596,31 @@
             const boost = 28 + (stats.attempts * 0.15);
             velX += (dx / dist) * boost;
             velY += (dy / dist) * boost;
-
             isInvulnerable = true;
             setTimeout(() => isInvulnerable = false, 250);
         }
 
         function handleCatch(e) {
             if (isResetting) return;
-            e.preventDefault();
-            e.stopPropagation();
+            e.preventDefault(); e.stopPropagation();
             if (isCaught || isInvulnerable) return;
-
             isCaught = true;
             stats.captures++;
             stats.attempts++;
             updateStatsUI();
-            
             const victories = I18N[lang].victories;
             showPopup(victories[Math.floor(Math.random() * victories.length)], 'victory');
             triggerConfetti();
-            
             duckEl.classList.add('caught-anim');
             setTimeout(spawnDuck, 600);
         }
 
         // --- Initialization ---
         window.onload = () => {
+            // Force reset on load
+            localStorage.removeItem('duck-panic-stats');
+            stats = { captures: 0, attempts: 0 };
+            
             updateReservedBottom();
             updateI18n();
             updateStatsUI();
