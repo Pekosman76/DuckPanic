@@ -297,13 +297,30 @@
         let isInvulnerable = false;
         let isMobile = window.innerWidth < 768;
         let isResetting = false;
+        let reservedBottom = 160; // Initial fallback
+
+        // Stuck detection state
+        let prevPosX = 0;
+        let prevPosY = 0;
+        let stuckFrames = 0;
 
         const duckEl = document.getElementById('duck');
         const duckEmoji = duckEl.querySelector('.duck-emoji');
         const gameArea = document.getElementById('game-area');
         const popup = document.getElementById('popup');
+        const statsPanel = document.querySelector('.stats-panel');
 
         // --- Functions ---
+        function updateReservedBottom() {
+            if (statsPanel) {
+                const statsHeight = statsPanel.getBoundingClientRect().height;
+                // Get the computed style to find the distance from bottom (1rem usually)
+                const style = window.getComputedStyle(statsPanel);
+                const bottomValue = parseFloat(style.bottom) || 16;
+                reservedBottom = statsHeight + bottomValue + 20; // 20px extra safety margin
+            }
+        }
+
         function updateI18n() {
             const t = I18N[lang];
             document.getElementById('ui-title').innerText = t.title + " 🦆";
@@ -330,7 +347,6 @@
         function spawnDuck() {
             const size = isMobile ? DUCK_SIZE.mobile : DUCK_SIZE.desktop;
             const margin = 100;
-            const reservedBottom = isMobile ? 220 : 160;
 
             let newX, newY, dist;
             let attempts = 0;
@@ -347,6 +363,7 @@
             velY = (Math.random() - 0.5) * 5;
             isCaught = false;
             isInvulnerable = false;
+            stuckFrames = 0;
             duckEl.classList.remove('caught-anim');
             duckEl.style.opacity = '1';
         }
@@ -399,7 +416,8 @@
 
             if (!isCaught) {
                 const size = isMobile ? DUCK_SIZE.mobile : DUCK_SIZE.desktop;
-                const reservedBottom = isMobile ? 220 : 160;
+                const edgeMargin = isMobile ? 22 : 28;
+                const minSpeed = isMobile ? 2.0 : 2.5;
                 
                 const basePanic = isMobile ? PANIC_ZONE.mobile : PANIC_ZONE.desktop;
                 const panicRadius = Math.min(550, basePanic + (stats.attempts * 1.8));
@@ -409,6 +427,7 @@
                 const dy = posY + size / 2 - mouseY;
                 const distance = Math.sqrt(dx * dx + dy * dy);
 
+                // 1. Core Panic Repulsion Logic
                 if (distance < panicRadius) {
                     const force = (1 - distance / panicRadius) * (3.0 * speedScale);
                     velX += (dx / distance) * force;
@@ -418,20 +437,71 @@
                     velY += (Math.random() - 0.5) * 0.3;
                 }
 
+                // 2. Anti-Corner Nudge
+                const pushStrength = Math.min(0.4, 0.15 + (stats.attempts * 0.001));
+                if (posX < edgeMargin) velX += pushStrength;
+                if (posX > window.innerWidth - size - edgeMargin) velX -= pushStrength;
+                if (posY < edgeMargin) velY += pushStrength;
+                if (posY > window.innerHeight - size - reservedBottom - edgeMargin) velY -= pushStrength;
+
+                // 3. Application of Velocity & Friction
                 velX *= 0.95;
                 velY *= 0.95;
 
                 posX += velX * (deltaTime / 16);
                 posY += velY * (deltaTime / 16);
 
-                if (posX < 0) { posX = 0; velX = Math.abs(velX) * 0.7; }
-                if (posX > window.innerWidth - size) { posX = window.innerWidth - size; velX = -Math.abs(velX) * 0.7; }
-                if (posY < 0) { posY = 0; velY = Math.abs(velY) * 0.7; }
-                if (posY > window.innerHeight - size - reservedBottom) {
-                    posY = window.innerHeight - size - reservedBottom;
-                    velY = -Math.abs(velY) * 0.7;
+                // 4. Stuck Detector
+                const distMoved = Math.sqrt((posX - prevPosX) ** 2 + (posY - prevPosY) ** 2);
+                if (distMoved < 0.5 && (posX < edgeMargin * 2 || posX > window.innerWidth - size - edgeMargin * 2 || posY < edgeMargin * 2 || posY > window.innerHeight - size - reservedBottom - edgeMargin * 2)) {
+                    stuckFrames++;
+                } else {
+                    stuckFrames = 0;
                 }
 
+                if (stuckFrames > 45) { 
+                    const centerX = window.innerWidth / 2;
+                    const centerY = (window.innerHeight - reservedBottom) / 2;
+                    const toCenterX = centerX - (posX + size / 2);
+                    const toCenterY = centerY - (posY + size / 2);
+                    const mag = Math.sqrt(toCenterX**2 + toCenterY**2);
+                    velX += (toCenterX / mag) * 4;
+                    velY += (toCenterY / mag) * 4;
+                    stuckFrames = 0;
+                }
+                prevPosX = posX;
+                prevPosY = posY;
+
+                // 5. Intelligent Bounce & Clamp Logic
+                if (posX < 0) { 
+                    posX = 0; 
+                    velX = Math.abs(velX) * 0.8 + 1.5; 
+                    velY += (Math.random() - 0.5) * 2.0; 
+                }
+                if (posX > window.innerWidth - size) { 
+                    posX = window.innerWidth - size; 
+                    velX = -Math.abs(velX) * 0.8 - 1.5; 
+                    velY += (Math.random() - 0.5) * 2.0; 
+                }
+                if (posY < 0) { 
+                    posY = 0; 
+                    velY = Math.abs(velY) * 0.8 + 1.5; 
+                    velX += (Math.random() - 0.5) * 2.0; 
+                }
+                if (posY > window.innerHeight - size - reservedBottom) {
+                    posY = window.innerHeight - size - reservedBottom;
+                    velY = -Math.abs(velY) * 0.8 - 1.5;
+                    velX += (Math.random() - 0.5) * 2.0; 
+                }
+
+                const currentSpeed = Math.sqrt(velX * velX + velY * velY);
+                if (currentSpeed < minSpeed && !isCaught) {
+                    const angle = Math.random() * Math.PI * 2;
+                    velX += Math.cos(angle) * 1.5;
+                    velY += Math.sin(angle) * 1.5;
+                }
+
+                // 6. Visual Transforms
                 const rotation = velX * 3.5;
                 const baseScale = isInvulnerable ? 0.85 : 1;
                 const breatheScale = Math.sin(time / 200) * 0.05;
@@ -493,6 +563,7 @@
 
         // --- Initialization ---
         window.onload = () => {
+            updateReservedBottom();
             updateI18n();
             updateStatsUI();
             spawnDuck();
@@ -506,6 +577,7 @@
 
             window.addEventListener('resize', () => {
                 isMobile = window.innerWidth < 768;
+                updateReservedBottom();
                 spawnDuck();
             });
         };
