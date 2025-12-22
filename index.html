@@ -99,10 +99,12 @@
             position: absolute;
             inset: 0;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             pointer-events: none;
             z-index: 30;
+            gap: 12px;
         }
 
         .popup {
@@ -121,6 +123,27 @@
         @keyframes popupBounce {
             from { transform: translateY(0) scale(1.1); }
             to { transform: translateY(-10px) scale(1.1); }
+        }
+
+        /* Nouveau Sous-Popup Taquin */
+        .sub-popup {
+            padding: 0.6rem 1.2rem;
+            border-radius: 1rem;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            font-weight: 700;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: none;
+            text-transform: uppercase;
+            animation: subPopupAnim 0.3s ease-out forwards;
+            pointer-events: none;
+            text-align: center;
+        }
+
+        @keyframes subPopupAnim {
+            from { opacity: 0; transform: scale(0.8) translateY(5px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
         }
 
         .stats-panel {
@@ -300,6 +323,7 @@
 
     <div class="message-overlay">
         <div id="popup" class="popup">Gagné !</div>
+        <div id="sub-popup" class="sub-popup"></div>
     </div>
 
     <div class="stats-panel">
@@ -379,6 +403,11 @@
                 timeUp: "TEMPS ÉCOULÉ !",
                 newRecord: "NOUVEAU RECORD !",
                 finalScore: "Score final : ",
+                finalMessages: {
+                    zero: "ZÉRO CANARD. ZÉRO TALENT.",
+                    small: "PAS MAL… POUR UN HUMAIN.",
+                    big: "OK… LÀ TU FAIS PEUR."
+                },
                 modalTitle: "Duck Panic : Le Guide Ultime",
                 modalH1: "La Mythologie du Canard",
                 modalP1: "Ce jeu absurde est conçu pour tester vos nerfs. Le canard paniqué est une espèce protégée.",
@@ -407,6 +436,11 @@
                 timeUp: "TIME'S UP!",
                 newRecord: "NEW RECORD!",
                 finalScore: "Final Score: ",
+                finalMessages: {
+                    zero: "ZERO DUCK. ZERO TALENT.",
+                    small: "NOT BAD… FOR A HUMAN.",
+                    big: "OK… YOU’RE SCARY."
+                },
                 modalTitle: "Duck Panic: Ultimate Guide",
                 modalH1: "Duck Mythology",
                 modalP1: "This absurd game is built to test your nerves. The panicking duck is a protected species.",
@@ -451,6 +485,7 @@
         const duckEmoji = duckEl.querySelector('.duck-emoji');
         const gameArea = document.getElementById('game-area');
         const popup = document.getElementById('popup');
+        const subPopup = document.getElementById('sub-popup');
         const statsPanel = document.querySelector('.stats-panel');
         const modal = document.getElementById('modal-info');
         const challengeBtn = document.getElementById('btn-challenge');
@@ -499,10 +534,21 @@
             document.getElementById('stat-best').innerText = bestScore60;
         }
 
+        function showEndMessage() {
+            const c = stats.captures;
+            const t = I18N[lang].finalMessages;
+            const msg = c === 0 ? t.zero : (c <= 2 ? t.small : t.big);
+
+            subPopup.innerText = msg;
+            subPopup.style.display = 'block';
+            setTimeout(() => {
+                subPopup.style.display = 'none';
+            }, 2800);
+        }
+
         function startChallenge() {
             if (isChallengeActive) return;
             isChallengeActive = true;
-            // Reset global stats as requested
             stats.captures = 0;
             stats.attempts = 0;
             challengeTimeLeft = 60;
@@ -532,7 +578,10 @@
                 msg = I18N[lang].newRecord + " " + stats.captures + " 🦆";
             }
 
+            // Affiche les popups simultanément
             showPopup(msg, 'victory');
+            showEndMessage();
+
             updateI18n();
             updateStatsUI();
         }
